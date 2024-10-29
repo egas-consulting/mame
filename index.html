@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Ghidul reciclarii</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/mapbox/assembly/publisher-staging/src/svgs/mapbox.svg">
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v2.11.0/mapbox-gl.js"></script>
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v2.11.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/intersection-observer@0.12.0/intersection-observer.js"></script>
+    <script src="https://unpkg.com/scrollama"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Signika:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;200;300;400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Roboto', sans-serif;
+        
+    }
+
+        a, a:hover, a:visited {
+            color: #474747;
+        }
+        #map {
+            top:0;
+            height: 100vh;
+            width:100vw;
+            position: fixed;
+        }
+        #mapInset {
+            bottom:50px;
+            right:30px;
+            height: 180px;
+            width:250px;
+            max-width:100%;
+            position: fixed;
+            z-index: 1;
+            opacity: 1;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none;
+        }
+        #mapInset .mapboxgl-ctrl-bottom-left{
+            display: none;
+        }
+        @media (max-width: 500px) {
+            #mapInset {
+                display: none;
+            }
+        }
+        #header {
+            margin: auto;
+            width: 100%;
+            position: relative;
+            z-index: 5;
+            background-color: #ffffff00;
+            
+        }
+
+        #header h1, #header h2, #header p {
+            margin: 0;
+            padding: 1vh 4vw;
+            text-align: center; 
+
+        }
+        #header h1 {
+            padding-top:10vh;
+        }
+        #footer {
+            width: 100%;
+            min-height: 5vh;
+            padding-top: 2vh;
+            padding-bottom: 2vh;
+            text-align: center;
+            line-height: 25px;
+            font-size: 13px;
+            position: relative;
+            z-index: 5;
+        }
+        #features {
+            padding-top: 10vh;
+            padding-bottom: 10vh;
+        }
+        .hidden {
+            visibility: hidden;
+        }
+        .centered {
+            width: 65vw;
+            margin: 0 auto;
+        }
+        .lefty {
+            width: 33vw;
+            margin-left: 5vw;
+        }
+        .righty {
+            width: 33vw;
+            margin-left: 62vw;
+        }
+        .fully {
+            width: 100%;
+            margin: auto;
+        }
+        .light {
+            color: #050505;
+            background-color: #fff7e8d7;
+            border-radius: 10px;
+        }
+        .dark {
+            color: #3a2a00;
+            background-color: #14141400;
+        }
+        .step {
+            padding-bottom: 50vh;
+            /* margin-bottom: 10vh; */
+            opacity: 0.25;
+        }
+        .step.active {
+            opacity: 0.9;
+        }
+
+        .step div {
+            padding:  25px 50px;
+            line-height: 25px;
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .step img {
+            width: 100%;
+        }
+
+        @media (max-width: 750px) {
+            .centered, .lefty, .righty, .fully {
+                width: 90vw;
+                margin: 0 auto;
+            }
+        }
+        #story { /* Adjust the ID/class based on your actual text container */
+        position: relative;
+        z-index: 100; /* Higher than the image overlay */
+        color: rgba(255, 255, 255, 0.479); /* Ensure text color contrasts well with your images */
+        padding: 20px; /* Adjust as needed */
+        }
+
+        #imageOverlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle, white 0, #FFF7E8 78%); /* Or any other color/background if you want */
+        display: flex;
+        justify-content: center !important;
+        align-items: center !important;
+        z-index: 10;
+        
+        }
+
+        #fullscreenImage {
+        max-width: 100%;
+        max-height: 100vh;
+        object-fit: contain;
+        
+        }
+
+        .title {
+            font-size: 29px; /* Adjust the size as needed */
+        }
+        .highlight {
+            color: #B00000;
+        }
+
+        @keyframes colorFade {
+        from {
+            color: #000000;
+        }
+        to {
+            color: #B00000;
+        }
+        }
+
+
+
+        /* Fix issue on mobile browser where scroll breaks  */
+        .mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan,
+        .mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan .mapboxgl-canvas {
+            touch-action: unset;
+        }
+
+
+        .horizontal-scroll {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* For Firefox */
+            -ms-overflow-style: none;  /* For Internet Explorer and Edge */
+        }
+
+        .horizontal-scroll::-webkit-scrollbar {
+            display: none; /* For Chrome, Safari, and Opera */
+        }
+
+        .horizontal-scroll > div {
+            flex: 0 0 auto;
+            scroll-snap-align: start;
+            width: 100vw; /* Adjust based on your needs */
+            height: 100vh; /* Adjust based on your needs */
+        }
+
+        #iconMenuContainer {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            text-align: right;
+            background-color: #76C26D;
+            color: white; /* Ensure text is white for better visibility */
+        }
+
+        #iconMenuContainer p {
+            margin: 0 0 20px; /* Adjusted for mobile first */
+            color: white;
+            background-color: #76C26D;/* Text color */
+        }
+
+        #iconMenu a {
+            display: inline-block;
+            margin: 0 5px;
+        }
+
+        #iconMenu img {
+            width: 40px; /* Smaller icons for mobile */
+            height: auto;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        #iconMenu img:hover {
+            transform: scale(1.1);
+        }
+
+        /* Larger screens */
+        @media (min-width: 768px) {
+            #iconMenuContainer p {
+                margin: 0 0 30px; /* More space on larger screens */
+            }
+
+            #iconMenu img {
+                width: 50px; /* Larger icons for desktop */
+            }
+        }
+
+        .anchor-target {
+            padding-top: 100px; /* Height of your fixed header */
+            margin-top: -100px; /* Negative value of the same size */
+            display: block; /* Ensure this element is treated as a block-level element */
+        }
+
+        #cap13galben, #cap13sgr, #cap14, #cap15, #cap15maro {
+            padding-top: 160px; /* Height of your fixed header */
+            margin-top: -100px; /* Negative value of the same size */
+            display: block; /* Ensure this element is treated as a block-level element */
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000; /* Make sure the z-index is higher than other elements */
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 800px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .modal-content {
+            position: relative;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        </style>
+</head>
+<body>
+<!-- Add this inside your body tag, above the map container -->
+
+<div id="map"></div>
+<div style="position: fixed; top: 10px; right: 10px; z-index: 1000; text-align: right;">
+    <p style="margin: 0 0 30px; color: rgb(0, 0, 0);">Click pe buton pentru detalii</p></div>
+
+    <div id="iconMenu" style="position: fixed; top: 40px; right: 10px; z-index: 1000;">
+        <img id="iconGalben" src="pubgalben.png" alt="Pubela galbenă">
+        <img id="iconSgr" src="pubsgr.png" alt="Pubela sgr">
+        <img id="iconNeagra" src="pubnegru.png" alt="Pubela neagra">
+        <img id="iconAlbastra" src="pubalbastra.png" alt="Pubela albastra">
+        <img id="iconVerde" src="blank.png" alt="Pubela verde">
+        <img id="iconMaro" src="blank.png" alt="Pubela maro">
+    </div>
+<div id="imageOverlay">
+    <img id="fullscreenImage" src="blank.png" >
+</div>
+
+<div id="imageModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <img id="modalImage" src="blank.png" style="max-width: 100%; max-height: 80vh; object-fit: contain;">
+    </div>
+</div>
+
+<div id="mapInset"></div>
+<div id="story"></div>
+
+
+<div id="horizontalScrollSection" class="horizontal-scroll">
+    <div id="horizontalContent"></div> <!-- This will hold the horizontally scrolling content -->
+</div>
+
+<script src="./config.js"></script>
+<script>
+    var horizontalScrollChapters = new Set();
+
+    config.chapters.forEach(chapter => {
+        if (chapter.horizontalScroll) {
+            horizontalScrollChapters.add(chapter.id);
+        }
+    });
+
+    var initLoad = true;
+    var layerTypes = {
+        'fill': ['fill-opacity'],
+        'line': ['line-opacity'],
+        'circle': ['circle-opacity', 'circle-stroke-opacity'],
+        'symbol': ['icon-opacity', 'text-opacity'],
+        'raster': ['raster-opacity'],
+        'fill-extrusion': ['fill-extrusion-opacity'],
+        'heatmap': ['heatmap-opacity']
+    };
+
+    var alignments = {
+        'left': 'lefty',
+        'center': 'centered',
+        'right': 'righty',
+        'full': 'fully'
+    };
+
+    function getLayerPaintType(layer) {
+        var layerType = map.getLayer(layer).type;
+        return layerTypes[layerType];
+    }
+
+    function setLayerOpacity(layer) {
+        var paintProps = getLayerPaintType(layer.layer);
+        paintProps.forEach(function(prop) {
+            var options = {};
+            if (layer.duration) {
+                var transitionProp = prop + "-transition";
+                options = { "duration": layer.duration };
+                map.setPaintProperty(layer.layer, transitionProp, options);
+            }
+            map.setPaintProperty(layer.layer, prop, layer.opacity, options);
+        });
+    }
+
+    var story = document.getElementById('story');
+    var features = document.createElement('div');
+    features.setAttribute('id', 'features');
+
+    var header = document.createElement('div');
+
+    if (config.title) {
+        var titleText = document.createElement('h1');
+        titleText.innerHTML = config.title;
+        header.appendChild(titleText);
+    }
+
+    if (config.subtitle) {
+        var subtitleText = document.createElement('h2');
+        subtitleText.innerHTML = config.subtitle;
+        header.appendChild(subtitleText);
+    }
+
+    if (config.byline) {
+        var bylineText = document.createElement('p');
+        bylineText.innerHTML = config.byline;
+        header.appendChild(bylineText);
+    }
+
+    if (header.innerText.length > 0) {
+        header.classList.add(config.theme);
+        header.setAttribute('id', 'header');
+        story.appendChild(header);
+    }
+
+    config.chapters.forEach((record, idx) => {
+        var container = document.createElement('div');
+        var chapter = document.createElement('div');
+
+        if (record.title) {
+            var title = document.createElement('h3');
+            title.innerHTML = record.title;
+            chapter.appendChild(title);
+        }
+
+        if (record.image) {
+            var image = new Image();
+            image.src = record.image;
+            chapter.appendChild(image);
+        }
+
+        if (record.description) {
+            var story = document.createElement('p');
+            story.innerHTML = record.description;
+            chapter.appendChild(story);
+        }
+
+        container.setAttribute('id', record.id);
+        container.classList.add('step');
+        if (idx === 0) {
+            container.classList.add('active');
+        }
+
+        chapter.classList.add(config.theme);
+        container.appendChild(chapter);
+        container.classList.add(alignments[record.alignment] || 'centered');
+        if (record.hidden) {
+            container.classList.add('hidden');
+        }
+        features.appendChild(container);
+    });
+
+    story.appendChild(features);
+
+    var footer = document.createElement('div');
+
+    if (config.footer) {
+        var footerText = document.createElement('p');
+        footerText.innerHTML = config.footer;
+        footer.appendChild(footerText);
+    }
+
+    if (footer.innerText.length > 0) {
+        footer.classList.add(config.theme);
+        footer.setAttribute('id', 'footer');
+        story.appendChild(footer);
+    }
+
+    mapboxgl.accessToken = config.accessToken;
+
+    const transformRequest = (url) => {
+        const hasQuery = url.indexOf("?") !== -1;
+        const suffix = hasQuery ? "&pluginName=scrollytellingV2" : "?pluginName=scrollytellingV2";
+        return {
+            url: url + suffix
+        };
+    };
+
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: config.style,
+        center: config.chapters[0].location.center,
+        zoom: config.chapters[0].location.zoom,
+        bearing: config.chapters[0].location.bearing,
+        pitch: config.chapters[0].location.pitch,
+        interactive: false,
+        transformRequest: transformRequest,
+        projection: config.projection
+    });
+
+    // Create an inset map if enabled in config.js
+    if (config.inset) {
+        var insetMap = new mapboxgl.Map({
+            container: 'mapInset', // container id
+            style: 'mapbox://styles/ed1990/clshd5fko001d01qw5qk66k79', //hosted style id
+            center: config.chapters[0].location.center,
+            zoom: 3,
+            hash: false,
+            interactive: false,
+            attributionControl: false
+        });
+    }
+
+    if (config.showMarkers) {
+        var marker = new mapboxgl.Marker({ color: config.markerColor });
+        marker.setLngLat(config.chapters[0].location.center).addTo(map);
+    }
+
+    // JavaScript to handle icon clicks and show pop-up images in a modal
+    const imageModal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const closeButton = document.querySelector('.close-button');
+
+    // Function to show the modal with the selected image
+    function showImageModal(imageSrc) {
+        // Reset the image content
+        modalImage.style.display = 'block';
+        modalImage.src = imageSrc;
+
+        // Remove any existing iframe if present
+        const modalContent = document.querySelector('.modal-content');
+        const iframe = modalContent.querySelector('iframe');
+        if (iframe) {
+            iframe.remove();
+        }
+
+        // Show the modal
+        imageModal.style.display = 'block';
+    }
+
+    // Function to show the modal with an embedded chart
+    function showChartModal() {
+        // Hide the modal image since it won't be needed
+        modalImage.style.display = 'none';
+
+        // Get the modal content element
+        const modalContent = document.querySelector('.modal-content');
+
+        // Clear previous iframe content (if any)
+        modalContent.innerHTML = '<span class="close-button">&times;</span>';
+
+        // Create and configure the iframe for the chart
+        const iframe = document.createElement('iframe');
+        iframe.title = "Numărul de petiții adresate lnspectiei Muncii și inspectoratelor teritoriale de muncă avănd ca obiect protecția maternității la locul de muncă";
+        iframe.setAttribute('aria-label', 'Map');
+        iframe.id = "datawrapper-chart-i6owI";
+        iframe.src = "https://datawrapper.dwcdn.net/i6owI/1/";
+        iframe.scrolling = "no";
+        iframe.frameBorder = "0";
+        iframe.style.width = "0";
+        iframe.style.minWidth = "100%";
+        iframe.style.border = "none";
+        iframe.style.height = "628px";
+        iframe.setAttribute('data-external', '1');
+
+        // Append the iframe to the modal content
+        modalContent.appendChild(iframe);
+
+        // Re-attach the event listener to the close button
+        document.querySelector('.close-button').addEventListener('click', () => {
+            imageModal.style.display = 'none';
+        });
+
+        // Show the modal with the embedded chart
+        imageModal.style.display = 'block';
+
+        // Listen for postMessage from the iframe to adjust the height dynamically
+        window.addEventListener('message', (event) => {
+            if (event.data['datawrapper-height']) {
+                for (const key in event.data['datawrapper-height']) {
+                    if (key === iframe.id) {
+                        iframe.style.height = event.data['datawrapper-height'][key] + 'px';
+                    }
+                }
+            }
+        });
+    }
+
+    // Add event listeners for each icon
+    document.getElementById('iconGalben').addEventListener('click', () => {
+        showImageModal('drepturi.png'); // Set the correct path to the image for each icon
+    });
+
+    document.getElementById('iconSgr').addEventListener('click', () => {
+        showImageModal('incalcari.png');
+    });
+
+    document.getElementById('iconNeagra').addEventListener('click', () => {
+        showImageModal('harta.png');
+    });
+
+    document.getElementById('iconAlbastra').addEventListener('click', () => {
+        showChartModal(); // Show the chart instead of an image
+    });
+
+    document.getElementById('iconVerde').addEventListener('click', () => {
+        showImageModal('path/to/image_verde.jpg');
+    });
+
+    document.getElementById('iconMaro').addEventListener('click', () => {
+        showImageModal('path/to/image_maro.jpg');
+    });
+
+    // Close the modal when the close button is clicked
+    closeButton.addEventListener('click', () => {
+        imageModal.style.display = 'none';
+    });
+
+    // Close the modal if clicked outside of the modal content
+    window.addEventListener('click', (event) => {
+        if (event.target === imageModal) {
+            imageModal.style.display = 'none';
+        }
+    });
+
+    // instantiate the scrollama
+    var scroller = scrollama();
+
+    map.on("load", function() {
+        if (config.use3dTerrain) {
+            map.addSource('mapbox-dem', {
+                'type': 'raster-dem',
+                'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                'tileSize': 512,
+                'maxzoom': 14
+            });
+            map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+            map.addLayer({
+                'id': 'sky',
+                'type': 'sky',
+                'paint': {
+                    'sky-type': 'atmosphere',
+                    'sky-atmosphere-sun': [0.0, 0.0],
+                    'sky-atmosphere-sun-intensity': 15
+                }
+            });
+        }
+
+        // As the map moves, grab and update bounds in inset map.
+        if (config.inset) {
+            map.on('move', getInsetBounds);
+        }
+
+        // setup the instance, pass callback functions
+        scroller.setup({
+            step: '.step',
+            offset: 0.5,
+            progress: true
+        });
+
+        scroller.onStepEnter(async response => {
+            console.log('Entering chapter:', response.element.id);
+
+            var current_chapter = config.chapters.findIndex(chap => chap.id === response.element.id);
+            var chapter = config.chapters[current_chapter];
+
+            // Check if the current chapter requires horizontal scrolling
+            if (horizontalScrollChapters.has(chapter.id)) {
+                document.getElementById('horizontalScrollSection').style.display = 'flex';
+                document.getElementById('horizontalContent').innerHTML = '<img src="' + chapter.overlayImage + '" style="width: 200%; height: 100%;">';
+                document.getElementById('map').style.display = 'none';
+            } else {
+                document.getElementById('horizontalScrollSection').style.display = 'none';
+                document.getElementById('map').style.display = 'block';
+            }
+
+            response.element.classList.add('active');
+            map[chapter.mapAnimation || 'flyTo'](chapter.location);
+            if (config.showMarkers) marker.setLngLat(chapter.location.center);
+            if (chapter.onChapterEnter.length > 0) {
+                chapter.onChapterEnter.forEach(layer => {
+                    setLayerOpacity(layer);
+                });
+            }
+            if (chapter.callback && typeof window[chapter.callback] === 'function') {
+                window[chapter.callback]();
+            }
+            if (chapter.rotateAnimation) {
+                map.once('moveend', () => {
+                    const rotateNumber = map.getBearing();
+                    map.rotateTo(rotateNumber + 180, { duration: 30000, easing: t => t });
+                });
+            }
+            if (config.auto) {
+                var next_chapter = (current_chapter + 1) % config.chapters.length;
+                map.once('moveend', () => {
+                    document.querySelectorAll('[data-scrollama-index="' + next_chapter.toString() + '"]')[0].scrollIntoView();
+                });
+            }
+
+            // Adjusting fullscreen overlay image display
+            if (chapter.overlayImage && !horizontalScrollChapters.has(chapter.id)) {
+                fullscreenImage.src = chapter.overlayImage;
+                imageOverlayDiv.style.display = 'flex';
+            } else {
+                imageOverlayDiv.style.display = 'none';
+            }
+        });
+    });
+
+    // Helper functions for inset map
+    function getInsetBounds() {
+        let bounds = map.getBounds();
+
+        let boundsJson = {
+            "type": "FeatureCollection",
+            "features": [{
+                "type": "Feature",
+                "properties": {},
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [bounds._sw.lng, bounds._sw.lat],
+                            [bounds._ne.lng, bounds._sw.lat],
+                            [bounds._ne.lng, bounds._ne.lat],
+                            [bounds._sw.lng, bounds._ne.lat],
+                            [bounds._sw.lng, bounds._sw.lat]
+                        ]
+                    ]
+                }
+            }]
+        };
+
+        if (initLoad) {
+            addInsetLayer(boundsJson);
+            initLoad = false;
+        } else {
+            updateInsetLayer(boundsJson);
+        }
+    }
+
+    function addInsetLayer(bounds) {
+        insetMap.addSource('boundsSource', {
+            'type': 'geojson',
+            'data': bounds
+        });
+
+        insetMap.addLayer({
+            'id': 'boundsLayer',
+            'type': 'fill',
+            'source': 'boundsSource',
+            'layout': {},
+            'paint': {
+                'fill-color': '#fff',
+                'fill-opacity': 0.2
+            }
+        });
+
+        insetMap.addLayer({
+            'id': 'outlineLayer',
+            'type': 'line',
+            'source': 'boundsSource',
+            'layout': {},
+            'paint': {
+                'line-color': '#000',
+                'line-width': 1
+            }
+        });
+    }
+
+    function updateInsetLayer(bounds) {
+        insetMap.getSource('boundsSource').setData(bounds);
+    }
+
+    function adjustMapSize() {
+        map.resize();
+    }
+
+    window.addEventListener('resize', adjustMapSize);
+    adjustMapSize();
+
+    // Adjusting scrollama offset to center the active chapter
+    window.addEventListener('resize', () => {
+        scroller.resize();
+    });
+</script>
+
+
+</body>
+</html>
+        
